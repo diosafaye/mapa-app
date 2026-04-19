@@ -22,7 +22,6 @@ export default function Login() {
       setLoading(false);
     } else {
       navigate('/map');
-      window.location.reload(); 
     }
   };
 
