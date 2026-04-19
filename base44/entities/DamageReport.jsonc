@@ -1,0 +1,66 @@
+{
+  "name": "DamageReport",
+  "type": "object",
+  "properties": {
+    "heritage_site_id": {
+      "type": "string",
+      "title": "Heritage Site ID"
+    },
+    "heritage_site_name": {
+      "type": "string",
+      "title": "Heritage Site Name"
+    },
+    "damage_level": {
+      "type": "string",
+      "title": "Site Condition / Damage Type",
+      "enum": [
+        "Cracks on Walls or Floors",
+        "Roof Damage or Collapse",
+        "Foundation Deterioration",
+        "Structural Instability",
+        "Flooding or Water Damage",
+        "Mold or Biological Growth",
+        "Graffiti or Vandalism",
+        "Artifact or Relic Loss",
+        "Fire Damage",
+        "Debris or Overgrowth",
+        "Partial Collapse",
+        "Near-Total Destruction",
+        "Other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Damage Description"
+    },
+    "reported_by": {
+      "type": "string",
+      "title": "Reported By"
+    },
+    
+    "date_of_damage": {
+      "type": "string",
+      "title": "Date of Damage"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Damage Photo URL"
+    },
+    "status": {
+      "type": "string",
+      "title": "Report Status",
+      "enum": [
+        "Pending Review",
+        "Verified",
+        "Under Restoration",
+        "Restored",
+        "Closed"
+      ]
+    }
+  },
+  "required": [
+    "heritage_site_name",
+    "damage_level",
+    "date_of_damage"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "name": "CulturalPractice",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Practice Name"
+    },
+    "town": {
+      "type": "string",
+      "title": "Town/Municipality"
+    },
+    "type": {
+      "type": "string",
+      "title": "Type",
+      "enum": [
+        "Festival",
+        "Tradition",
+        "Ritual",
+        "Performing Arts",
+        "Craftsmanship",
+        "Culinary Heritage",
+        "Other"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "historical_background": {
+      "type": "string",
+      "title": "Historical Background"
+    },
+    "schedule": {
+      "type": "string",
+      "title": "Schedule/Frequency"
+    },
+    "practitioners": {
+      "type": "string",
+      "title": "Practitioners/Community"
+    },
+    "endangered_status": {
+      "type": "string",
+      "title": "Endangered Status",
+      "enum": [
+        "Thriving",
+        "Stable",
+        "Vulnerable",
+        "Endangered",
+        "Critically Endangered",
+        "Extinct"
+      ]
+    },
+    "related_site_id": {
+      "type": "string",
+      "title": "Related Heritage Site ID"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Image URL"
+    }
+  },
+  "required": [
+    "name",
+    "town",
+    "type"
+  ]
+}

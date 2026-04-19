@@ -1,0 +1,85 @@
+{
+  "name": "HeritageSite",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Site Name"
+    },
+    "town": {
+      "type": "string",
+      "title": "Town/Municipality"
+    },
+    "category": {
+      "type": "string",
+      "title": "Category",
+      "enum": [
+        "Church",
+        "Historical Landmark",
+        "Natural Heritage",
+        "Archaeological Site",
+        "Museum",
+        "Cultural Center",
+        "Other"
+      ]
+    },
+    "classification": {
+      "type": "string",
+      "title": "Heritage Classification",
+      "enum": [
+        "National Cultural Treasure",
+        "Important Cultural Property",
+        "Local Heritage",
+        "UNESCO World Heritage",
+        "Unclassified"
+      ]
+    },
+    "description": {
+      "type": "string",
+      "title": "Description"
+    },
+    "historical_significance": {
+      "type": "string",
+      "title": "Historical Significance"
+    },
+    "year_established": {
+      "type": "number",
+      "title": "Year Established"
+    },
+    "latitude": {
+      "type": "number",
+      "title": "Latitude"
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Longitude"
+    },
+    "image_url": {
+      "type": "string",
+      "title": "Image URL"
+    },
+    "conservation_status": {
+      "type": "string",
+      "title": "Conservation Status",
+      "enum": [
+        "Excellent",
+        "Good",
+        "Fair",
+        "Deteriorating",
+        "Critical",
+        "Destroyed"
+      ]
+    },
+    "is_active": {
+      "type": "boolean",
+      "title": "Active/Visible on Map"
+    }
+  },
+  "required": [
+    "name",
+    "town",
+    "category",
+    "latitude",
+    "longitude"
+  ]
+}

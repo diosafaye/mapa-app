@@ -1,0 +1,79 @@
+{
+  "name": "DisasterAlert",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Alert Title"
+    },
+    "disaster_type": {
+      "type": "string",
+      "title": "Disaster Type",
+      "enum": [
+        "Typhoon",
+        "Flooding",
+        "Landslide",
+        "Earthquake",
+        "Storm Surge",
+        "Volcanic Activity",
+        "Fire",
+        "Other"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "title": "Severity Level",
+      "enum": [
+        "Advisory",
+        "Watch",
+        "Warning",
+        "Critical Emergency"
+      ]
+    },
+    "affected_towns": {
+      "type": "array",
+      "title": "Affected Towns",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string",
+      "title": "Alert Description"
+    },
+    "instructions": {
+      "type": "string",
+      "title": "Safety Instructions"
+    },
+    "is_active": {
+      "type": "boolean",
+      "title": "Alert Active"
+    },
+    "started_at": {
+      "type": "string",
+      "title": "Alert Start Time"
+    },
+    "ended_at": {
+      "type": "string",
+      "title": "Alert End Time"
+    },
+    "affected_heritage_sites": {
+      "type": "array",
+      "title": "Affected Heritage Site IDs",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "string",
+      "title": "Alert Source (e.g. PAGASA, NDRRMC)"
+    }
+  },
+  "required": [
+    "title",
+    "disaster_type",
+    "severity",
+    "affected_towns",
+    "is_active"
+  ]
+}

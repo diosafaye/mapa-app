@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 8%;
+    --foreground: 45 20% 95%;
+    --card: 210 18% 11%;
+    --card-foreground: 45 20% 95%;
+    --popover: 210 18% 11%;
+    --popover-foreground: 45 20% 95%;
+    --primary: 38 85% 58%;
+    --primary-foreground: 210 20% 8%;
+    --secondary: 210 15% 18%;
+    --secondary-foreground: 45 20% 90%;
+    --muted: 210 15% 15%;
+    --muted-foreground: 210 10% 55%;
+    --accent: 162 60% 45%;
+    --accent-foreground: 210 20% 8%;
+    --destructive: 0 72% 58%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 15% 18%;
+    --input: 210 15% 18%;
+    --ring: 38 85% 58%;
+    --radius: 0.75rem;
+    --sidebar-background: 210 20% 6%;
+    --sidebar-foreground: 45 20% 90%;
+    --sidebar-primary: 38 85% 58%;
+    --sidebar-primary-foreground: 210 20% 8%;
+    --sidebar-accent: 210 15% 15%;
+    --sidebar-accent-foreground: 45 20% 90%;
+    --sidebar-border: 210 15% 18%;
+    --sidebar-ring: 38 85% 58%;
+
+    --font-inter: 'Inter', sans-serif;
+    --font-playfair: 'Playfair Display', serif;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+}
+
+.leaflet-container {
+  background: #1a2332 !important;
+}
+
+.leaflet-tile-pane {
+  filter: brightness(0.85) saturate(0.9);
+}
+
+.heritage-marker {
+  cursor: pointer;
+}
+
+.pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  50% { transform: scale(1.1); opacity: 0.4; }
+  100% { transform: scale(0.8); opacity: 0.8; }
+}
+
+.alert-pulse {
+  animation: alert-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes alert-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.font-inter { font-family: var(--font-inter); }
+.font-playfair { font-family: var(--font-playfair); }
