@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Switched to Supabase for better performance
+import { supabase } from "@/lib/supabase"; 
 import { Search, MapPin, Calendar, Users, Music } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,11 +44,9 @@ export default function CulturePage() {
   const filtered = practices.filter(p => {
     const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
       p.town?.toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "all" || p.category === typeFilter; // Mapped to 'category' column
+    const matchType = typeFilter === "all" || p.category === typeFilter; 
     return matchSearch && matchType;
   });
-
-  const types = [...new Set(practices.map(p => p.category).filter(Boolean))];
 
   return (
     <div className="h-full flex overflow-hidden bg-background">
@@ -187,15 +185,6 @@ export default function CulturePage() {
                  {selected.description || "No description available for this practice."}
                </p>
             </section>
-
-            {selected.historical_background && (
-              <section className="bg-muted/40 p-8 rounded-3xl border border-border">
-                <h3 className="text-xs font-black text-foreground uppercase tracking-[0.2em] mb-4">Historical Context</h3>
-                <p className="text-sm leading-loose text-muted-foreground whitespace-pre-wrap">
-                  {selected.historical_background}
-                </p>
-              </section>
-            )}
 
             {selected.practitioners && (
               <div className="flex items-center gap-5 p-6 bg-primary/5 rounded-2xl border border-primary/10">
