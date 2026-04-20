@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabase"; // Using the lib/supabase.js for consistent keys
-import { Plus, Trash2, Edit2, Eye, EyeOff, Music, MapPin, Users } from "lucide-react";
+import { supabase } from "@/lib/supabase"; 
+import { Plus, Trash2, Edit2, Eye, EyeOff, Music, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BOHOL_TOWNS } from "../../data/boholData";
 
 const EMPTY = {
-  name: "", town: "", type: "", description: "", historical_background: "",
+  name: "", town: "", type: "", description: "",
   schedule: "", practitioners: "", endangered_status: "", image_url: "", is_active: true
 };
 
@@ -38,7 +38,9 @@ export default function AdminCulture() {
   const fs = (field) => v => setForm(prev => ({ ...prev, [field]: v }));
 
   const openEdit = (p) => {
-    setForm({ ...EMPTY, ...p });
+    const cleanP = { ...EMPTY };
+    Object.keys(EMPTY).forEach(key => { if (p[key] !== undefined) cleanP[key] = p[key]; });
+    setForm(cleanP);
     setEditingId(p.id);
     setShowForm(true);
     setTimeout(() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
@@ -59,18 +61,27 @@ export default function AdminCulture() {
     }
     setSaving(true);
 
-    // FIX: Destructure id so we don't try to update the primary key
-    const { id, ...dataToUpdate } = form;
+    const dataToUpdate = {
+      name: form.name,
+      town: form.town,
+      type: form.type,
+      description: form.description,
+      schedule: form.schedule,
+      practitioners: form.practitioners,
+      endangered_status: form.endangered_status,
+      image_url: form.image_url,
+      is_active: form.is_active
+    };
 
     let error;
     if (editingId) {
       const res = await supabase
         .from('cultural_practices')
-        .update(dataToUpdate) // Use the cleaned object
+        .update(dataToUpdate)
         .eq('id', editingId);
       error = res.error;
     } else {
-      const res = await supabase.from('cultural_practices').insert([form]);
+      const res = await supabase.from('cultural_practices').insert([dataToUpdate]);
       error = res.error;
     }
 
@@ -103,7 +114,6 @@ export default function AdminCulture() {
 
   return (
     <div className="p-6 space-y-6 bg-[#0f1115] min-h-full text-white">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
            <h2 className="text-xl font-bold">Cultural Heritage Registry</h2>
@@ -114,7 +124,6 @@ export default function AdminCulture() {
         </Button>
       </div>
 
-      {/* Form Section */}
       {showForm && (
         <div ref={formRef} className="bg-[#16191d] border border-slate-800 rounded-2xl p-6 space-y-4 shadow-xl">
           <h3 className="font-semibold text-primary">{editingId ? "Edit Cultural Practice" : "Add New Cultural Practice"}</h3>
@@ -146,7 +155,6 @@ export default function AdminCulture() {
         </div>
       )}
 
-      {/* Cards List */}
       <div className="grid grid-cols-1 gap-3">
         {practices.map(p => (
           <div key={p.id} className={`bg-[#16191d] border border-slate-800 rounded-xl p-4 flex items-center justify-between gap-3 transition-all hover:border-slate-600 ${p.is_active === false ? "opacity-50" : ""}`}>
@@ -165,7 +173,6 @@ export default function AdminCulture() {
                </div>
             </div>
 
-            {/* ACTION BUTTONS */}
             <div className="flex items-center gap-1">
               <button 
                 onClick={() => toggleActive(p)} 
