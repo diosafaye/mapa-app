@@ -26,6 +26,7 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // ✅ Fetch data only — no side effects
   const fetchData = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -47,15 +48,6 @@ export default function NotificationsPage() {
       if (reportsRes.error) throw reportsRes.error;
       setDamageReports(reportsRes.data || []);
       setNotifications(notifRes.data || []);
-
-      // ✅ Mark all unread notifications as delivered when page is opened
-      if (notifRes.data?.some(n => !n.is_delivered)) {
-        await supabase
-          .from("push_notifications")
-          .update({ is_delivered: true })
-          .eq("user_id", user.id)
-          .eq("is_delivered", false);
-      }
     } catch (error) {
       console.error("Error loading data:", error.message);
     } finally {
@@ -63,8 +55,19 @@ export default function NotificationsPage() {
     }
   }, [user?.id]);
 
+  // ✅ Mark as delivered only once on mount — not on every realtime update
+  const markAsDelivered = useCallback(async () => {
+    if (!user?.id) return;
+    await supabase
+      .from("push_notifications")
+      .update({ is_delivered: true })
+      .eq("user_id", user.id)
+      .eq("is_delivered", false);
+  }, [user?.id]);
+
   useEffect(() => {
     fetchData();
+    markAsDelivered(); // ✅ runs once on mount only
 
     const realtimeChannel = supabase
       .channel("my-reports-changes")
@@ -73,7 +76,7 @@ export default function NotificationsPage() {
       .subscribe();
 
     return () => { supabase.removeChannel(realtimeChannel); };
-  }, [fetchData]);
+  }, [fetchData, markAsDelivered]);
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -108,8 +111,8 @@ export default function NotificationsPage() {
                     key={notif.id}
                     className={`border rounded-xl p-4 flex items-start gap-3 transition-colors ${
                       !notif.is_delivered
-                        ? "bg-primary/5 border-primary/20"  // ✅ unread style
-                        : "bg-card border-border"            // ✅ read style
+                        ? "bg-primary/5 border-primary/20"
+                        : "bg-card border-border"
                     }`}
                   >
                     <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
@@ -118,7 +121,6 @@ export default function NotificationsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="font-bold text-foreground text-sm">{notif.title}</p>
-                        {/* ✅ unread dot */}
                         {!notif.is_delivered && (
                           <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
                         )}
