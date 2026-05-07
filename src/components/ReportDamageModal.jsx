@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/api/supabaseClient";
+import { useAuth } from "@/lib/AuthContext"; // ✅ added
 import { X, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,7 @@ const CONDITION_TYPES = [
 
 export default function ReportDamageModal({ site, onClose }) {
   const isOnline = useOnlineStatus();
+  const { user } = useAuth(); // ✅ get current user
   const [form, setForm] = useState({
     damage_level: "",
     description: "",
@@ -43,14 +45,19 @@ export default function ReportDamageModal({ site, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [sites, setSites] = useState([]);
 
-  // Fetch sites from Supabase on mount
+  // ✅ Pre-fill reported_by with user's full name
+  useEffect(() => {
+    if (user?.full_name) {
+      setForm(p => ({ ...p, reported_by: user.full_name }));
+    }
+  }, [user]);
+
   useEffect(() => {
     const fetchSites = async () => {
       const { data, error } = await supabase
-        .from('HeritageSite')
+        .from('heritage_sites') // ✅ fixed table name
         .select('id, name, town')
         .eq('is_active', true);
-      
       if (!error && data) setSites(data);
     };
     fetchSites();
@@ -62,26 +69,20 @@ export default function ReportDamageModal({ site, onClose }) {
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
     setUploading(true);
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
-      
       const { error: uploadError } = await supabase.storage
         .from('damage-reports')
         .upload(fileName, file);
-
       if (uploadError) throw uploadError;
-
       const { data: publicUrlData } = supabase.storage
         .from('damage-reports')
         .getPublicUrl(fileName);
-
       setForm((p) => ({ ...p, image_url: publicUrlData.publicUrl }));
     } catch (error) {
       toast.error("Failed to upload image");
-      console.error(error);
     } finally {
       setUploading(false);
     }
@@ -89,23 +90,26 @@ export default function ReportDamageModal({ site, onClose }) {
 
   const submit = async () => {
     if (!form.damage_level || !form.description || !form.heritage_site_name) return;
-    
     setSaving(true);
+
     const reportData = {
       heritage_site_id: form.heritage_site_id,
       heritage_site_name: form.heritage_site_name,
       damage_level: form.damage_level,
       description: form.description,
       reported_by: form.reported_by || "Anonymous Visitor",
-      reporter_email: form.reporter_email,
+      reporter_email: form.reporter_email || user?.email || "",
       image_url: form.image_url,
       date_of_damage: form.date_of_damage,
       status: "Pending Review",
+      user_id: user?.id || null, // ✅ save the user's ID
     };
 
     try {
       if (isOnline) {
-        const { error } = await supabase.from('DamageReport').insert(reportData);
+        const { error } = await supabase
+          .from('damage_reports') // ✅ fixed table name
+          .insert(reportData);
         if (error) throw error;
         toast.success("Damage report submitted successfully");
       } else {
