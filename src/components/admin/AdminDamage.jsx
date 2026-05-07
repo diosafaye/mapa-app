@@ -90,11 +90,9 @@ export default function AdminDamage() {
     .eq("id", id);
     
   if (error) {
-    console.log("update error:", error);
-    toast.error("Update failed");
-  } else {
-    toast.success(`Status updated to ${status}`);
-  }
+  console.log("full error:", JSON.stringify(error));
+  toast.error("Update failed");
+}
 };
 
   const remove = async (id) => {
