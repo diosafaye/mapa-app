@@ -1,10 +1,9 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; 
-import { Search, MapPin, Calendar, Users, Music } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { supabase } from "@/api/supabaseClient"; 
+import { Search, MapPin, Calendar, Users, Music, ChevronLeft, Loader2, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Emojis kept EXACTLY as original
 const TYPE_EMOJI = {
   "Festival": "🎉", "Tradition": "🏮", "Ritual": "🙏", "Performing Arts": "🎭",
   "Craftsmanship": "🧺", "Culinary Heritage": "🍲", "Other": "✨"
@@ -26,35 +25,51 @@ export default function CulturePage() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
 
-  useEffect(() => {
-    fetchPractices();
+  const fetchPractices = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('cultural_practices')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (error) throw error;
+      setPractices(data || []);
+    } catch (err) {
+      console.error("Failed to load cultural practices:", err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchPractices = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('cultural_practices')
-      .select('*')
-      .order('created_at', { ascending: false });
+  useEffect(() => {
+    fetchPractices();
+  }, [fetchPractices]);
 
-    if (!error && data) setPractices(data);
-    setLoading(false);
-  };
+  // FIXED: Now mapping specifically to the 'type' column
+  const filtered = useMemo(() => {
+    return practices.filter(p => {
+      const matchSearch = !search || 
+        p.name?.toLowerCase().includes(search.toLowerCase()) ||
+        p.town?.toLowerCase().includes(search.toLowerCase());
+      const matchType = typeFilter === "all" || p.type === typeFilter; 
+      return matchSearch && matchType;
+    });
+  }, [practices, search, typeFilter]);
 
-  const filtered = practices.filter(p => {
-    const matchSearch = p.name?.toLowerCase().includes(search.toLowerCase()) ||
-      p.town?.toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === "all" || p.category === typeFilter; 
-    return matchSearch && matchType;
-  });
+  // FIXED: Generating filter from 'type' column
+  const availableTypes = useMemo(() => 
+    [...new Set(practices.map(p => p.type).filter(Boolean))], 
+    [practices]
+  );
 
   return (
     <div className="h-full flex overflow-hidden bg-background">
       {/* Sidebar List */}
       <div className={`${selected ? "hidden md:flex" : "flex"} flex-col w-full md:w-96 border-r border-border bg-card shadow-lg z-10`}>
         <div className="p-6 border-b border-border bg-muted/30">
-          <h1 className="font-playfair text-2xl font-bold tracking-tight">Cultural Heritage</h1>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">Intangible Treasures of Bohol</p>
+          <h1 className="font-playfair text-2xl font-bold tracking-tight text-foreground">Cultural Heritage</h1>
+          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-1">Intangible Treasures of Bohol</p>
         </div>
 
         <div className="p-4 border-b border-border space-y-3 bg-card">
@@ -63,58 +78,58 @@ export default function CulturePage() {
             <Input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search traditions..."
-              className="pl-9 bg-muted/50 border-border focus:bg-background transition-all"
+              placeholder="Search traditions or towns..."
+              className="pl-9 bg-muted/50 border-border focus:bg-background transition-all text-xs h-9"
             />
           </div>
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full bg-muted/50 border-border h-9">
+            <SelectTrigger className="w-full bg-muted/50 border-border h-8 text-[10px] font-bold uppercase">
               <SelectValue placeholder="Filter by Type" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Heritage Types</SelectItem>
-              {Object.keys(TYPE_EMOJI).map(t => (
-                <SelectItem key={t} value={t}>{TYPE_EMOJI[t]} {t}</SelectItem>
+              {availableTypes.map(t => (
+                <SelectItem key={t} value={t} className="text-xs">
+                  {TYPE_EMOJI[t] || "✨"} {t}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <div className="flex justify-between items-center px-1">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase">{filtered.length} entries found</p>
-            {loading && <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />}
-          </div>
+          <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest px-1">
+            {filtered.length} documented practice{filtered.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
         <div className="flex-1 overflow-y-auto no-scrollbar">
-          {filtered.length === 0 && !loading ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3">
+              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+              <span className="text-[10px] font-black uppercase text-muted-foreground tracking-tighter">Accessing Archives...</span>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="p-10 text-center opacity-40">
               <Search className="w-10 h-10 mx-auto mb-2" />
-              <p className="text-sm">No practices found</p>
+              <p className="text-sm font-bold">No practices found</p>
             </div>
           ) : (
             filtered.map(practice => (
               <button
                 key={practice.id}
                 onClick={() => setSelected(practice)}
-                className={`w-full text-left p-5 border-b border-border hover:bg-muted/40 transition-all ${selected?.id === practice.id ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"}`}
+                className={`w-full text-left p-5 border-b border-border hover:bg-muted/40 transition-all ${
+                  selected?.id === practice.id ? "bg-primary/5 border-l-4 border-l-primary" : "border-l-4 border-l-transparent"
+                }`}
               >
                 <div className="flex items-start gap-4">
-                  <div className="text-3xl bg-muted rounded-xl p-2 h-14 w-14 flex items-center justify-center shadow-inner">
-                    {TYPE_EMOJI[practice.category] || "✨"}
+                  <div className="text-2xl bg-muted rounded-lg p-2 h-12 w-12 flex items-center justify-center shadow-inner flex-shrink-0">
+                    {TYPE_EMOJI[practice.type] || "✨"}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-bold text-foreground leading-tight truncate">{practice.name}</h3>
-                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground mt-1 font-medium">
+                    <h3 className="text-sm font-black text-foreground leading-tight truncate uppercase tracking-tighter">
+                      {practice.name}
+                    </h3>
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground mt-1 font-bold uppercase tracking-tight">
                       <MapPin className="w-3 h-3 text-primary" /> {practice.town}
-                    </div>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      <span className="text-[9px] font-black uppercase bg-secondary px-1.5 py-0.5 rounded tracking-tighter">
-                        {practice.category}
-                      </span>
-                      {practice.endangered_status && (
-                        <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded border tracking-tighter ${ENDANGERED_COLORS[practice.endangered_status]}`}>
-                          {practice.endangered_status}
-                        </span>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -127,87 +142,106 @@ export default function CulturePage() {
       {/* Main Detail View */}
       {selected ? (
         <div className="flex-1 overflow-y-auto bg-background animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="relative h-[40vh] min-h-[300px]">
+          <div className="relative h-[45vh] min-h-[350px]">
             {selected.image_url ? (
-              <img src={selected.image_url} alt={selected.name} className="w-full h-full object-cover" />
+              <img src={selected.image_url} alt={selected.name} className="w-full h-full object-cover shadow-2xl" />
             ) : (
               <div className="w-full h-full bg-gradient-to-tr from-muted to-primary/10 flex items-center justify-center">
-                <span className="text-[120px] opacity-20">{TYPE_EMOJI[selected.category]}</span>
+                <span className="text-[140px] opacity-10">{TYPE_EMOJI[selected.type] || "✨"}</span>
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
             
             <button 
               onClick={() => setSelected(null)} 
-              className="absolute top-6 left-6 z-20 bg-background/80 hover:bg-background backdrop-blur-md rounded-full px-4 py-2 text-xs font-bold border border-border transition-all md:hidden"
+              className="absolute top-6 left-6 z-20 bg-background/90 hover:bg-background backdrop-blur-md rounded-full p-2 border border-border shadow-xl md:hidden text-foreground"
             >
-              ← Back to List
+              <ChevronLeft className="w-5 h-5" />
             </button>
 
-            <div className="absolute bottom-8 left-8 right-8">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded">
-                  {selected.category}
-                </div>
+            <div className="absolute bottom-10 left-10 right-10">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="px-3 py-1 bg-primary text-primary-foreground text-[10px] font-black uppercase rounded-full shadow-lg tracking-[0.2em]">
+                  {selected.type}
+                </span>
+                {selected.endangered_status && (
+                  <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-full border shadow-lg tracking-[0.1em] ${ENDANGERED_COLORS[selected.endangered_status]}`}>
+                    {selected.endangered_status}
+                  </span>
+                )}
               </div>
-              <h2 className="font-playfair text-5xl font-black text-foreground">{selected.name}</h2>
-              <div className="flex items-center gap-4 mt-3">
-                 <p className="text-sm font-bold flex items-center gap-1.5 text-primary">
-                    <MapPin className="w-4 h-4" /> {selected.town}, Bohol
-                 </p>
-              </div>
+              <h2 className="font-playfair text-6xl font-black text-foreground drop-shadow-sm leading-tight">
+                {selected.name}
+              </h2>
+              <p className="text-sm font-black flex items-center gap-2 text-primary mt-4 uppercase tracking-[0.2em]">
+                <MapPin className="w-4 h-4" /> {selected.town}, Bohol, Philippines
+              </p>
             </div>
           </div>
 
-          <div className="max-w-4xl p-8 space-y-10">
-            {/* Status Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               {selected.endangered_status && (
-                <div className={`p-4 rounded-2xl border ${ENDANGERED_COLORS[selected.endangered_status]}`}>
-                  <p className="text-[10px] uppercase font-black opacity-70 mb-1">Conservation Status</p>
-                  <p className="text-sm font-bold">{selected.endangered_status}</p>
-                </div>
-              )}
-              {selected.schedule && (
-                <div className="p-4 rounded-2xl border border-border bg-card">
-                   <p className="text-[10px] uppercase font-black text-muted-foreground mb-1">Schedule / Frequency</p>
-                   <p className="text-sm font-bold flex items-center gap-2">
-                     <Calendar className="w-4 h-4 text-primary" /> {selected.schedule}
-                   </p>
-                </div>
-              )}
-            </div>
+          <div className="max-w-5xl p-10 space-y-12">
+            <div className="grid md:grid-cols-3 gap-12">
+              <div className="md:col-span-2 space-y-10">
+                <section>
+                  <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
+                    <Sparkles className="w-3 h-3" /> Description & Significance
+                  </h3>
+                  <p className="text-lg text-foreground/90 leading-relaxed font-medium text-justify">
+                    {selected.description || "The specific details and cultural significance of this tradition are currently being documented by the MAPA Bohol team."}
+                  </p>
+                </section>
 
-            {/* Content Sections */}
-            <section>
-               <h3 className="text-xs font-black text-primary uppercase tracking-[0.2em] mb-4">Description & Significance</h3>
-               <p className="text-lg text-foreground/80 leading-relaxed font-serif italic">
-                 {selected.description || "No description available for this practice."}
-               </p>
-            </section>
+                {selected.historical_background && (
+                  <section className="bg-muted/30 rounded-3xl p-8 border border-border">
+                    <h3 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4">Historical Lineage</h3>
+                    <p className="text-base text-foreground/80 leading-relaxed italic font-serif">
+                      {selected.historical_background}
+                    </p>
+                  </section>
+                )}
+              </div>
 
-            {selected.practitioners && (
-              <div className="flex items-center gap-5 p-6 bg-primary/5 rounded-2xl border border-primary/10">
-                <div className="p-3 bg-primary/10 rounded-full">
-                  <Users className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase text-primary/60">Community Practitioners</p>
-                  <p className="text-sm font-bold text-foreground">{selected.practitioners}</p>
+              <div className="space-y-6">
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-sm sticky top-6">
+                  <h3 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-6">Heritage Metadata</h3>
+                  
+                  <div className="space-y-6">
+                    {selected.schedule && (
+                      <div>
+                        <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-2">Occurrence</p>
+                        <div className="flex items-center gap-3">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          <p className="text-xs font-bold text-foreground leading-tight">{selected.schedule}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {selected.practitioners && (
+                      <div className="pt-6 border-t border-border">
+                        <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-2">Community Custodians</p>
+                        <div className="flex items-start gap-3">
+                          <Users className="w-4 h-4 text-muted-foreground mt-0.5" />
+                          <p className="text-xs font-bold text-foreground leading-snug">{selected.practitioners}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
       ) : (
-        <div className="hidden md:flex flex-1 items-center justify-center bg-muted/10">
-          <div className="text-center space-y-4">
-            <div className="w-24 h-24 bg-card rounded-3xl flex items-center justify-center mx-auto shadow-sm border border-border">
-              <Music className="w-10 h-10 text-muted-foreground/40" />
+        <div className="hidden md:flex flex-1 items-center justify-center bg-muted/5 border-l border-border">
+          <div className="text-center space-y-6 max-w-sm px-10">
+            <div className="w-20 h-20 bg-background rounded-[2rem] flex items-center justify-center mx-auto shadow-xl border border-border rotate-3">
+              <Music className="w-8 h-8 text-primary/40" />
             </div>
             <div>
-              <p className="text-xl font-playfair font-bold text-foreground">Select a Tradition</p>
-              <p className="text-sm text-muted-foreground">Explore the intangible heritage of our community</p>
+              <h3 className="text-xl font-playfair font-black text-foreground uppercase tracking-widest">Tradition Registry</h3>
+              <p className="text-xs font-bold text-muted-foreground leading-relaxed mt-3 opacity-60">
+                Explore the living heritage of Bohol. Select a practice to view its history, community practitioners, and conservation status.
+              </p>
             </div>
           </div>
         </div>

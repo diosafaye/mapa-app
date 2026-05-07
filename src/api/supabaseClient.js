@@ -1,13 +1,27 @@
-import { createClient } from '@supabase/supabase-js'; // Fix: Correct package name
+import { createClient } from '@supabase/supabase-js';
 
-// These draw the secret keys from your .env file
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Check if keys are missing (helps you debug faster)
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error("Missing Supabase URL or Anon Key! Check your .env file.");
 }
 
-// This is the specific "supabase" object your other files are looking for
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const globalKey = '__supabase_singleton__';
+
+if (!window[globalKey]) {
+  window[globalKey] = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: false,
+      storageKey: 'mapa-bohol-auth-key',
+      
+      lock: async (name, acquireTimeout, fn) => {
+        return await fn();  // just run the function immediately, no locking
+      },
+    }
+  });
+}
+
+export const supabase = window[globalKey];

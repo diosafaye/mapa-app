@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 // Swapped base44 for your local Supabase client
-import { supabase } from "@/lib/supabase"; 
+import { supabase } from "@/api/supabaseClient"; 
 import { Plus, Trash2, Edit2, Eye, EyeOff, Landmark, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

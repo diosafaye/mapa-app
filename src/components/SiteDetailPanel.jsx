@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, MapPin, Calendar, Shield, AlertTriangle, Star, Navigation, FileText, CheckCircle } from "lucide-react";
-import { supabase } from "@/lib/supabase"; // Ensure this import is correct
+import { supabase } from "@/api/supabaseClient"; // Ensure this import is correct
 
 const CONSERVATION_COLORS = {
   "Excellent": "bg-green-500/20 text-green-400 border-green-500/30",

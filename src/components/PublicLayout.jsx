@@ -1,14 +1,18 @@
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
-import { Map, BookOpen, Shield, AlertTriangle, FileText, Bell, Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { supabase } from "@/api/supabaseClient"; // Ensure this matches your project structure
+import { Map, BookOpen, Shield, AlertTriangle, FileText, Bell, Menu, X, Inbox } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import OfflineBanner from "@/components/OfflineBanner";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const navLinks = [
-  { to: "/", label: "Map", icon: Map },
+  { to: "/map", label: "Map", icon: Map },
   { to: "/heritage", label: "Heritage Sites", icon: BookOpen },
   { to: "/culture", label: "Culture", icon: Shield },
   { to: "/alerts", label: "Alerts", icon: AlertTriangle },
-  { to: "/reports", label: "Damage Reports", icon: FileText },
+  { to: "/reports", label: "Reports", icon: FileText },
+  { to: "/notifications", label: "Notifications", icon: Inbox },
 ];
 
 export default function PublicLayout() {
@@ -17,47 +21,73 @@ export default function PublicLayout() {
   const [activeAlerts, setActiveAlerts] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      setActiveAlerts(0); 
-    };
-    fetchAlerts();
+  const fetchAlertsCount = useCallback(async () => {
+    try {
+      const { count, error } = await supabase
+        .from("disaster_alerts")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+
+      if (!error) setActiveAlerts(count || 0);
+    } catch (err) {
+      console.error("Alert sync failed:", err);
+    }
   }, []);
 
-  const isActive = (path) => path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
+  useEffect(() => {
+    fetchAlertsCount();
+    const alertChannel = supabase
+      .channel("public-alerts-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "disaster_alerts" },
+        () => fetchAlertsCount()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(alertChannel);
+    };
+  }, [fetchAlertsCount]);
+
+  const isActive = (path) => 
+    path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Top Nav */}
-      <header className="sticky top-0 z-50 bg-card/90 backdrop-blur-xl border-b border-border shadow-sm">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <OfflineBanner />
+
+      {/* --- TOP NAVIGATION BAR --- */}
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          {/* Brand */}
-          <Link to="/" className="flex items-center gap-3 flex-shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+          
+          {/* Logo Section */}
+          <Link to="/" className="flex items-center gap-3 flex-shrink-0 group">
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 transition-transform group-hover:scale-105">
               <Map className="w-5 h-5 text-primary-foreground" />
             </div>
             <div className="hidden sm:block">
-              <p className="font-playfair font-bold text-foreground text-sm leading-tight">MAPA Bohol</p>
-              <p className="text-xs text-muted-foreground">Cultural Heritage System</p>
+              <p className="font-bold text-foreground text-sm leading-tight tracking-tight">MAPA Bohol</p>
+              <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-70">Heritage System</p>
             </div>
           </Link>
 
-          {/* Desktop Nav */}
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive(to)
-                    ? "bg-primary/15 text-primary"
+                    ? "bg-primary/10 text-primary border border-primary/10 shadow-sm"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className={`w-4 h-4 ${isActive(to) ? "text-primary" : "opacity-60"}`} />
                 {label}
                 {to === "/alerts" && activeAlerts > 0 && (
-                  <span className="bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold alert-pulse">
+                  <span className="bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black animate-pulse">
                     {activeAlerts}
                   </span>
                 )}
@@ -65,78 +95,82 @@ export default function PublicLayout() {
             ))}
           </nav>
 
-          {/* Right side */}
+          {/* Right Action Area */}
           <div className="flex items-center gap-3">
-            {activeAlerts > 0 && (
-              <div className="hidden sm:flex items-center gap-1.5 bg-destructive/10 border border-destructive/30 rounded-full px-3 py-1">
-                <Bell className="w-3.5 h-3.5 text-destructive alert-pulse" />
-                <span className="text-xs font-bold text-destructive">{activeAlerts} Active Alert{activeAlerts > 1 ? "s" : ""}</span>
-              </div>
-            )}
-            
-            {/* --- FIXED: CLICKABLE PROFILE SECTION --- */}
-            <Link 
-              to="/login" 
-              className="flex items-center gap-2 hover:bg-muted p-1 rounded-full transition-colors cursor-pointer"
-              title="Click to Login"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/10">
-                <span className="text-primary text-xs font-bold">
-                  {user?.full_name?.charAt(0) || "U"}
-                </span>
-              </div>
-              <span className="hidden sm:block text-sm text-muted-foreground font-medium">
-                {user?.full_name || "Viewer"}
-              </span>
-            </Link>
-            {/* -------------------------------------- */}
+            <div className="flex items-center gap-2 pl-2 border-l border-border">
+              <Link 
+                to={user ? "/profile" : "/login"} 
+                className="flex items-center gap-2 hover:bg-muted p-1 pr-3 rounded-full transition-all group"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/10 group-hover:border-primary/30 overflow-hidden">
+                  <span className="text-primary text-xs font-black uppercase">
+                    {user?.full_name?.charAt(0) || "U"}
+                  </span>
+                </div>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-bold text-foreground leading-none">
+                    {user?.full_name || "Viewer"}
+                  </p>
+                  <p className="text-[9px] font-black text-muted-foreground uppercase tracking-tighter opacity-60">
+                    {user ? "Authenticated" : "Guest Access"}
+                  </p>
+                </div>
+              </Link>
+              <ThemeToggle />
+            </div>
 
             {/* Mobile menu toggle */}
-            <button className="md:hidden text-foreground" onClick={() => setMobileOpen(!mobileOpen)}>
+            <button 
+              className="md:hidden p-2 rounded-lg bg-muted/50 text-foreground transition-colors hover:bg-muted" 
+              onClick={() => setMobileOpen(!mobileOpen)}
+            >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile nav */}
+        {/* Mobile Navigation Dropdown */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-border bg-card px-4 py-3 space-y-1">
+          <nav className="md:hidden border-t border-border bg-card px-4 py-4 space-y-1 shadow-xl animate-in slide-in-from-top duration-200">
             {navLinks.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
                   isActive(to)
-                    ? "bg-primary/15 text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-primary/15 text-primary border border-primary/10"
+                    : "text-muted-foreground hover:bg-muted"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                {label}
+                <Icon className="w-5 h-5" />
+                <span className="flex-1">{label}</span>
                 {to === "/alerts" && activeAlerts > 0 && (
-                  <span className="bg-destructive text-destructive-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center font-bold ml-auto alert-pulse">
+                  <span className="bg-destructive text-destructive-foreground text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-black">
                     {activeAlerts}
                   </span>
                 )}
               </Link>
             ))}
-          </div>
+          </nav>
         )}
       </header>
 
-      {/* Active Alert Banner */}
+      {/* --- GLOBAL EMERGENCY BANNER --- */}
       {activeAlerts > 0 && (
-        <div className="bg-destructive/10 border-b border-destructive/30 px-4 py-2 text-center">
-          <p className="text-sm font-semibold text-destructive alert-pulse">
-            ⚠️ {activeAlerts} active disaster alert{activeAlerts > 1 ? "s" : ""} in Bohol —{" "}
-            <Link to="/alerts" className="underline hover:no-underline">View details</Link>
+        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-2 text-center z-40 backdrop-blur-sm">
+          <p className="text-[10px] md:text-xs font-bold text-destructive uppercase tracking-widest animate-pulse">
+            ⚠️ {activeAlerts} active emergency alert{activeAlerts > 1 ? "s" : ""} in Bohol —{" "}
+            <Link to="/alerts" className="underline font-black decoration-2">Take Action</Link>
           </p>
         </div>
       )}
 
-      <main className="flex-1 overflow-hidden">
-        <Outlet />
+      {/* --- MAIN CONTENT AREA (The Scrolling Fix) --- */}
+      <main className="flex-1 overflow-y-auto bg-background relative scroll-smooth">
+        <div className="min-h-full w-full">
+            <Outlet />
+        </div>
       </main>
     </div>
   );
