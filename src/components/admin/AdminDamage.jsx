@@ -81,14 +81,21 @@ export default function AdminDamage() {
   };
 
   const updateStatus = async (id, status) => {
-    const { error } = await supabase
-      .from("damage_reports")
-      .update({ status })
-      .eq("id", id);
-      
-    if (error) toast.error("Update failed");
-    else toast.success(`Status updated to ${status}`);
-  };
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log("session when updating:", session);  // ✅ add this
+  
+  const { error } = await supabase
+    .from("damage_reports")
+    .update({ status })
+    .eq("id", id);
+    
+  if (error) {
+    console.log("update error:", error);  // ✅ add this
+    toast.error("Update failed");
+  } else {
+    toast.success(`Status updated to ${status}`);
+  }
+};
 
   const remove = async (id) => {
     if (!window.confirm("Permanent delete? This cannot be undone.")) return;
