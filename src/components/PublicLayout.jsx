@@ -181,11 +181,9 @@ export default function PublicLayout() {
       )}
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 overflow-y-auto bg-background relative scroll-smooth">
-        <div className="min-h-full w-full">
-          <Outlet />
-        </div>
-      </main>
-    </div>
-  );
+    <main className="flex-1 overflow-hidden bg-background relative">
+  <div className="h-full w-full overflow-y-auto">
+    <Outlet />
+  </div>
+</main>
 }

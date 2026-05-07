@@ -135,7 +135,7 @@ export default function MapView() {
   const activeAlertsList = alerts.filter(a => !dismissedAlerts.has(a.id));
 
   return (
-    <div className="relative h-full w-full flex flex-col overflow-hidden">
+    <div className="absolute inset-0 flex flex-col overflow-hidden">
       {/* Alert banners */}
       {activeAlertsList.length > 0 && (
         <div className="absolute top-0 left-0 right-0 z-[1000] space-y-1 p-3">
