@@ -82,7 +82,7 @@ export default function AdminDamage() {
 
   const updateStatus = async (id, status) => {
   const { data: { session } } = await supabase.auth.getSession();
-  console.log("session when updating:", session);  // ✅ add this
+  console.log("access token:", session?.access_token?.slice(0, 20)); // ✅ add this line
   
   const { error } = await supabase
     .from("damage_reports")
@@ -90,7 +90,7 @@ export default function AdminDamage() {
     .eq("id", id);
     
   if (error) {
-    console.log("update error:", error);  // ✅ add this
+    console.log("update error:", error);
     toast.error("Update failed");
   } else {
     toast.success(`Status updated to ${status}`);

@@ -13,8 +13,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: false,
     storageKey: 'mapa-bohol-auth-key',
-    lock: async (name, acquireTimeout, fn) => {
-      return await fn();
-    },
+    lock: async (name, acquireTimeout, fn) => fn(),
   }
 });
