@@ -18,7 +18,7 @@ export default function PublicLayout() {
   const location = useLocation();
   const { user, logout } = useAuth();
   const [activeAlerts, setActiveAlerts] = useState(0);
-  const [unreadNotifs, setUnreadNotifs] = useState(0); // ✅ added
+  const [unreadNotifs, setUnreadNotifs] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const fetchAlertsCount = useCallback(async () => {
@@ -33,7 +33,6 @@ export default function PublicLayout() {
     }
   }, []);
 
-  // ✅ fetch unread notifications for this user
   const fetchUnreadNotifs = useCallback(async () => {
     if (!user?.id) return;
     try {
@@ -48,14 +47,25 @@ export default function PublicLayout() {
     }
   }, [user?.id]);
 
+  // ✅ Mark all as delivered in database immediately
+  const markAllAsDelivered = useCallback(async () => {
+    if (!user?.id) return;
+    setUnreadNotifs(0); // clear badge instantly
+    await supabase
+      .from("push_notifications")
+      .update({ is_delivered: true })
+      .eq("user_id", user.id)
+      .eq("is_delivered", false);
+  }, [user?.id]);
+
   useEffect(() => {
     fetchAlertsCount();
-    fetchUnreadNotifs(); // ✅ added
+    fetchUnreadNotifs();
 
     const alertChannel = supabase
       .channel("public-alerts-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "disaster_alerts" }, () => fetchAlertsCount())
-      .on("postgres_changes", { event: "*", schema: "public", table: "push_notifications" }, () => fetchUnreadNotifs()) // ✅ added
+      .on("postgres_changes", { event: "*", schema: "public", table: "push_notifications" }, () => fetchUnreadNotifs())
       .subscribe();
     return () => { supabase.removeChannel(alertChannel); };
   }, [fetchAlertsCount, fetchUnreadNotifs]);
@@ -107,19 +117,19 @@ export default function PublicLayout() {
 
           {/* Right Action Area */}
           <div className="flex items-center gap-2">
-            {/* ✅ Bell now shows unread notification count */}
-            <Link 
-  to="/notifications" 
-  className="relative p-2 flex items-center justify-center"
-  onClick={() => setUnreadNotifs(0)} // ✅ instantly clear badge on click
->
-  <Bell className={`w-5 h-5 ${unreadNotifs > 0 ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
-  {unreadNotifs > 0 && (
-    <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black">
-      {unreadNotifs}
-    </span>
-  )}
-</Link>
+            {/* ✅ Bell marks as delivered in DB on click */}
+            <Link
+              to="/notifications"
+              className="relative p-2 flex items-center justify-center"
+              onClick={markAllAsDelivered}
+            >
+              <Bell className={`w-5 h-5 ${unreadNotifs > 0 ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
+              {unreadNotifs > 0 && (
+                <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black">
+                  {unreadNotifs}
+                </span>
+              )}
+            </Link>
 
             <ThemeToggle />
 
