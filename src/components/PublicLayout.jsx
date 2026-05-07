@@ -180,7 +180,7 @@ export default function PublicLayout() {
         </div>
       )}
 
-     {/* MAIN CONTENT */}
+    {/* MAIN CONTENT */}
       <main className="flex-1 overflow-hidden bg-background relative">
         <div className="h-full w-full overflow-y-auto">
           <Outlet />
