@@ -40,7 +40,7 @@ export default function AdminDamage() {
     const { data, error } = await supabase
       .from("damage_reports")
       .select("*")
-      .order("created_at", { ascending: false });
+      .order("created_date", { ascending: false });
     
     if (error) {
       toast.error("Failed to sync reports");
