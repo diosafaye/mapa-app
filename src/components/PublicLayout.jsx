@@ -16,8 +16,9 @@ const navLinks = [
 
 export default function PublicLayout() {
   const location = useLocation();
-  const { user, logout } = useAuth(); // ✅ added logout
+  const { user, logout } = useAuth();
   const [activeAlerts, setActiveAlerts] = useState(0);
+  const [unreadNotifs, setUnreadNotifs] = useState(0); // ✅ added
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const fetchAlertsCount = useCallback(async () => {
@@ -32,14 +33,32 @@ export default function PublicLayout() {
     }
   }, []);
 
+  // ✅ fetch unread notifications for this user
+  const fetchUnreadNotifs = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { count, error } = await supabase
+        .from("push_notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("is_delivered", false);
+      if (!error) setUnreadNotifs(count || 0);
+    } catch (err) {
+      console.error("Notif count failed:", err);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
     fetchAlertsCount();
+    fetchUnreadNotifs(); // ✅ added
+
     const alertChannel = supabase
       .channel("public-alerts-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "disaster_alerts" }, () => fetchAlertsCount())
+      .on("postgres_changes", { event: "*", schema: "public", table: "push_notifications" }, () => fetchUnreadNotifs()) // ✅ added
       .subscribe();
     return () => { supabase.removeChannel(alertChannel); };
-  }, [fetchAlertsCount]);
+  }, [fetchAlertsCount, fetchUnreadNotifs]);
 
   const isActive = (path) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -88,12 +107,12 @@ export default function PublicLayout() {
 
           {/* Right Action Area */}
           <div className="flex items-center gap-2">
-            {/* ✅ Notifications bell */}
+            {/* ✅ Bell now shows unread notification count */}
             <Link to="/notifications" className="relative p-2 flex items-center justify-center">
-              <Bell className={`w-5 h-5 ${activeAlerts > 0 ? "text-destructive animate-pulse" : "text-muted-foreground"}`} />
-              {activeAlerts > 0 && (
-                <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black">
-                  {activeAlerts}
+              <Bell className={`w-5 h-5 ${unreadNotifs > 0 ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
+              {unreadNotifs > 0 && (
+                <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black">
+                  {unreadNotifs}
                 </span>
               )}
             </Link>
@@ -115,7 +134,6 @@ export default function PublicLayout() {
                   {user?.role || "User"}
                 </p>
               </div>
-              {/* ✅ Logout button */}
               <button
                 onClick={() => logout()}
                 className="p-2 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-colors"
@@ -158,7 +176,6 @@ export default function PublicLayout() {
                 )}
               </Link>
             ))}
-            {/* ✅ Logout in mobile menu too */}
             <button
               onClick={() => { logout(); setMobileOpen(false); }}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold text-destructive hover:bg-destructive/10 transition-all"
@@ -180,7 +197,7 @@ export default function PublicLayout() {
         </div>
       )}
 
-    {/* MAIN CONTENT */}
+      {/* MAIN CONTENT */}
       <main className="flex-1 overflow-hidden bg-background relative">
         <div className="h-full w-full overflow-y-auto">
           <Outlet />

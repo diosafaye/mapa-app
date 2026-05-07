@@ -47,6 +47,15 @@ export default function NotificationsPage() {
       if (reportsRes.error) throw reportsRes.error;
       setDamageReports(reportsRes.data || []);
       setNotifications(notifRes.data || []);
+
+      // ✅ Mark all unread notifications as delivered when page is opened
+      if (notifRes.data?.some(n => !n.is_delivered)) {
+        await supabase
+          .from("push_notifications")
+          .update({ is_delivered: true })
+          .eq("user_id", user.id)
+          .eq("is_delivered", false);
+      }
     } catch (error) {
       console.error("Error loading data:", error.message);
     } finally {
@@ -88,19 +97,32 @@ export default function NotificationsPage() {
           </div>
         ) : (
           <>
-            {/* ✅ Push Notifications Section */}
+            {/* Push Notifications Section */}
             {notifications.length > 0 && (
               <div className="space-y-3">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                   Recent Notifications
                 </p>
                 {notifications.map(notif => (
-                  <div key={notif.id} className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex items-start gap-3">
+                  <div
+                    key={notif.id}
+                    className={`border rounded-xl p-4 flex items-start gap-3 transition-colors ${
+                      !notif.is_delivered
+                        ? "bg-primary/5 border-primary/20"  // ✅ unread style
+                        : "bg-card border-border"            // ✅ read style
+                    }`}
+                  >
                     <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
                       <Bell className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground text-sm">{notif.title}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-foreground text-sm">{notif.title}</p>
+                        {/* ✅ unread dot */}
+                        {!notif.is_delivered && (
+                          <span className="w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">{notif.body}</p>
                       <p className="text-[10px] text-muted-foreground/70 font-bold uppercase tracking-wide mt-2">
                         {new Date(notif.created_at).toLocaleString()}
@@ -111,7 +133,7 @@ export default function NotificationsPage() {
               </div>
             )}
 
-            {/* ✅ Damage Reports Section */}
+            {/* Damage Reports Section */}
             <div className="space-y-3">
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                 My Submitted Reports
