@@ -108,14 +108,18 @@ export default function PublicLayout() {
           {/* Right Action Area */}
           <div className="flex items-center gap-2">
             {/* ✅ Bell now shows unread notification count */}
-            <Link to="/notifications" className="relative p-2 flex items-center justify-center">
-              <Bell className={`w-5 h-5 ${unreadNotifs > 0 ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
-              {unreadNotifs > 0 && (
-                <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black">
-                  {unreadNotifs}
-                </span>
-              )}
-            </Link>
+            <Link 
+  to="/notifications" 
+  className="relative p-2 flex items-center justify-center"
+  onClick={() => setUnreadNotifs(0)} // ✅ instantly clear badge on click
+>
+  <Bell className={`w-5 h-5 ${unreadNotifs > 0 ? "text-primary animate-pulse" : "text-muted-foreground"}`} />
+  {unreadNotifs > 0 && (
+    <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-black">
+      {unreadNotifs}
+    </span>
+  )}
+</Link>
 
             <ThemeToggle />
 
