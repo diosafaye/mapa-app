@@ -60,6 +60,8 @@ const AuthenticatedApp = () => {
           <Route path="/map" element={<MapView />} />
           <Route path="/heritage" element={<HeritageSites />} />
           <Route path="/culture" element={<CulturePage />} />
+           <Route path="/alerts" element={<AlertsPage />} />       
+           <Route path="/reports" element={<DamageReports />} /> 
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/admin" element={<Navigate to="/map" replace />} />
           <Route path="*" element={<PageNotFound />} />
