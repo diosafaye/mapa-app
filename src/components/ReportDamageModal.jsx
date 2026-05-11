@@ -78,7 +78,7 @@ export default function ReportDamageModal({ site, onClose }) {
         .upload(fileName, file);
       if (uploadError) throw uploadError;
       const { data: publicUrlData } = supabase.storage
-        .from('damage-reports')
+        .from('damage_reports')
         .getPublicUrl(fileName);
       setForm((p) => ({ ...p, image_url: publicUrlData.publicUrl }));
     } catch (error) {
@@ -102,13 +102,13 @@ export default function ReportDamageModal({ site, onClose }) {
       image_url: form.image_url,
       date_of_damage: form.date_of_damage,
       status: "Pending Review",
-      user_id: user?.id || null, // ✅ save the user's ID
+      user_id: user?.id || null, 
     };
 
     try {
       if (isOnline) {
         const { error } = await supabase
-          .from('damage_reports') // ✅ fixed table name
+          .from('damage_reports') 
           .insert(reportData);
         if (error) throw error;
         toast.success("Damage report submitted successfully");
