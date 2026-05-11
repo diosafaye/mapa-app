@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/api/supabaseClient";
-import { useAuth } from "@/lib/AuthContext"; // ✅ added
+import { useAuth } from "@/lib/AuthContext";
 import { X, AlertTriangle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +28,7 @@ const CONDITION_TYPES = [
 
 export default function ReportDamageModal({ site, onClose }) {
   const isOnline = useOnlineStatus();
-  const { user } = useAuth(); // ✅ get current user
+  const { user } = useAuth(); 
   const [form, setForm] = useState({
     damage_level: "",
     description: "",
@@ -45,7 +45,7 @@ export default function ReportDamageModal({ site, onClose }) {
   const [uploading, setUploading] = useState(false);
   const [sites, setSites] = useState([]);
 
-  // ✅ Pre-fill reported_by with user's full name
+ 
   useEffect(() => {
     if (user?.full_name) {
       setForm(p => ({ ...p, reported_by: user.full_name }));
@@ -55,7 +55,7 @@ export default function ReportDamageModal({ site, onClose }) {
   useEffect(() => {
     const fetchSites = async () => {
       const { data, error } = await supabase
-        .from('heritage_sites') // ✅ fixed table name
+        .from('heritage_sites')
         .select('id, name, town')
         .eq('is_active', true);
       if (!error && data) setSites(data);
@@ -74,7 +74,7 @@ export default function ReportDamageModal({ site, onClose }) {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random()}.${fileExt}`;
       const { error: uploadError } = await supabase.storage
-        .from('damage-reports')
+        .from('damage_reports')
         .upload(fileName, file);
       if (uploadError) throw uploadError;
       const { data: publicUrlData } = supabase.storage
