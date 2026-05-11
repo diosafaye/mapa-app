@@ -65,8 +65,8 @@ export default function PublicLayout() {
     const alertChannel = supabase
       .channel("public-alerts-sync")
       .on("postgres_changes", { event: "*", schema: "public", table: "disaster_alerts" }, () => fetchAlertsCount())
-      .on("postgres_changes", { event: "*", schema: "public", table: "push_notifications" }, () => fetchUnreadNotifs())
-      .subscribe();
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "push_notifications" }, () => fetchUnreadNotifs())     
+ .subscribe();
     return () => { supabase.removeChannel(alertChannel); };
   }, [fetchAlertsCount, fetchUnreadNotifs]);
 
